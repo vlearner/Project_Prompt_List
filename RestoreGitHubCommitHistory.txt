@@ -1,0 +1,54 @@
+Sure — here’s a **comprehensive and reusable prompt** summarizing everything from this conversation. You can feed this into another AI model to regenerate or adapt the solution:
+
+---
+
+### ✅ Prompt for Another AI Model:
+
+---
+
+I want to build two Python scripts using the GitHub API:
+
+1. **Mirror Script**
+   A script that fetches and stores the full commit history for all branches in a GitHub repository into a local JSON file (e.g., `commit_mirror.json`).
+   The structure should look like:
+
+   ```json
+   {
+     "branch-a": ["commit_sha1", "commit_sha2", ...],
+     "branch-b": ["commit_sha1", ...]
+   }
+   ```
+
+2. **Restore Script**
+   A CLI-based Python script that:
+
+   * Accepts a GitHub token, repo name, and file paths for the mirror file, a target branch list (`target_branches.txt`), and a restore log (`restore_log.json`)
+   * For each commit found in the mirror file:
+
+     * Checks if the commit is missing from any of the branches listed in `target_branches.txt`
+     * If missing, creates a new branch off another branch that *has* the commit (e.g., `missingbranch-restore-<short_sha>`)
+     * Creates a PR from the restore branch to the missing branch
+     * Logs the operation in `restore_log.json` to avoid duplicates in future runs
+
+   The restore script should support arguments using `argparse`:
+
+   * `--token`
+   * `--repo`
+   * `--mirror-file`
+   * `--target-file`
+   * `--log-file`
+   * `--delay` (optional, for rate limit safety)
+
+3. Optional:
+
+   * Add error handling if branches or commits don’t exist
+   * Use GitHub’s REST API via `PyGithub`
+   * Log skip/PR creation status in console
+
+Also suggest how to test this setup:
+
+* By creating a temporary test repo
+* Creating divergent branches with different commit histories
+* Running the scripts against that test repo
+
+I may later want to add automation to simulate such test scenarios, but not for now.
