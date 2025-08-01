@@ -1,0 +1,54 @@
+I want to build a Python-based CLI automation tool that:
+
+1. Reads a list of service names from a file called `services.txt`. Each line contains one service name, e.g., `payments`, `onboarding`, etc.
+
+2. For each service:
+   - Clone its source code repo from GitHub at the following pattern:
+     `https://github.com/ORG_NAME/{service}.git`
+   - Clone its CD repo using the pattern:
+     `https://github.com/ORG_NAME/{service}-cd.git`
+   - Store these two repos inside a folder named after the service inside a top-level folder `services/{service}`
+
+3. For each repo cloned (source + CD), search all files recursively for matches using the following regex patterns:
+   - `"implementation\\s+['\\"]org\\.slf4j"` → To detect use of logging library in Gradle files
+   - `"autoscaling.+(minReplicas|maxReplicas)"` → To detect Kubernetes autoscaling config in YAML
+   - `"logger\\.error\\("` → To detect error logging calls in Java or Kotlin
+
+4. For every matching line:
+   - Construct a GitHub URL pointing to that file and line number:
+     `https://github.com/ORG_NAME/{repo}/blob/{branch}/{relative_path}#L{line_number}`
+   - Save the repo name, file path, match type, context line, and GitHub URL in memory.
+
+5. After search:
+   - Use **Playwright in Python** (separate script/module) to:
+     - Visit each GitHub URL
+     - Take a screenshot of the page
+     - Save it inside the respective `services/{service}` folder with a numbered file name like `match_1.png`, `match_2.png`, etc.
+
+6. Also generate an HTML report called `report.html` inside each service folder with:
+   - A list of all matches with:
+     - Match type
+     - Context line
+     - GitHub URL (as clickable link)
+     - Embedded screenshot preview (using the `match_X.png` images)
+
+7. After processing each service:
+   - Delete the two cloned repo folders (to keep disk usage low)
+   - Move on to the next service in the list
+
+8. Use modular design:
+   - `fetch_and_scan.py`: Cloning + search + URL building
+   - `take_screenshots.py`: Playwright screenshot logic
+   - `generate_report.py`: HTML report generation
+   - `run_all.py`: Orchestrates the full flow service by service
+   - `config.py`: Regex patterns and global settings (e.g., org name, branch name)
+   - `services.txt`: Plain text list of service names
+
+9. Handle GitHub authentication if needed (optional) via token or public clone, and optionally support Playwright using a stored authenticated session file like `auth.json`.
+
+10. Make sure the full tool runs end-to-end:
+   - `run_all.py` should orchestrate cloning, scanning, screenshotting, report generation, and cleanup for each service.
+
+11. Optionally include a `requirements.txt` for dependencies (`playwright`, etc.), and code comments.
+
+Please generate the full project or starter files and functions accordingly.
