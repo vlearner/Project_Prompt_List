@@ -1,0 +1,110 @@
+# Project: GitHub Build Inspector Web App (Flask)
+
+## 📌 Goal
+Build a Flask-based web app that:
+1. Displays a login screen where the user enters a GitHub Personal Access Token.
+2. Validates the token using GitHub’s API (`GET /user`).
+3. If the token is valid, redirect to the home dashboard page.
+4. In the dashboard:
+   - Accept an app name as input.
+   - Search all GitHub repositories under a fixed organization (`ownerne`) using the naming pattern `app-<APPNAME>-*`.
+   - For each matching repo:
+     - Get the default branch.
+     - Get the latest **successful** GitHub Actions workflow run.
+     - Download and extract logs from the workflow run.
+     - Parse the logs for Docker image tags (e.g., `release`, `snapshot`, `release-build`).
+   - Display this data in a styled table:
+     - Repo Name
+     - Branch Name
+     - Last Build Time
+     - Extracted Image Tags
+
+---
+
+## 🧑‍💻 Tech Stack
+- Python 3.10+
+- Flask for backend + routing
+- HTML/Jinja2 + Bootstrap for frontend
+- GitHub REST API v3
+- (Optional for future) Redis for caching build metadata
+
+---
+
+## 📦 Requirements
+- Follow SDLC best practices:
+  - Modular code: separate concerns into API layer, service layer, and UI (routes/templates)
+  - Use type hints and logging
+  - Write reusable helper functions
+  - Add unit test stubs under `tests/`
+  - Create config management via `.env`
+
+---
+
+## 🔐 GitHub Token Authentication
+- On the login page:
+  - Prompt the user for a GitHub Personal Access Token.
+  - Validate token by calling `GET https://api.github.com/user` with the token.
+  - If valid, store the token in Flask session and redirect to `/dashboard`.
+  - If invalid, show an error message.
+- All API requests must use the user-supplied token from session.
+
+---
+
+## 🧠 Logic Summary
+
+### 📁 API Layer (`github_api.py`)
+- `search_repositories(app_name: str, token: str) -> List[dict]`
+- `get_default_branch(repo_full_name: str, token: str) -> str`
+- `get_latest_successful_run(repo_full_name: str, branch: str, token: str) -> dict`
+- `get_workflow_logs(repo_full_name: str, run_id: int, token: str) -> bytes`
+
+### 🧩 Service Layer (`parser.py`)
+- `extract_image_tags(log_zip: bytes) -> List[str]`  
+  Use regex to find patterns like:
+  - `release.*?tag.*?:.*?`  
+  - `snapshot.*?tag.*?:.*?`  
+  - `release[-_ ]build.*?tag.*?:.*?`
+
+### 🌐 Web Layer (`routes.py`, `templates/`)
+- `/login` (GET/POST): form for token entry, validate token
+- `/dashboard`: show app name search input + results table
+- `/logout`: clear session
+
+---
+
+## 🔁 Caching (Optional Future)
+- Add Redis support for caching:
+  - Search results per app name
+  - Workflow logs per run ID
+- Use `redis-py` with connection management in `cache.py`
+- Comment Redis-related lines and mark `# TODO: Enable Redis cache`
+
+---
+
+## ✅ Deliverables
+- Python modules:
+  - `app.py`, `routes.py`, `github_api.py`, `parser.py`, `cache.py`
+- HTML templates using Bootstrap:
+  - `login.html`, `dashboard.html`, `base.html`
+- `.env.example` file
+- `requirements.txt`
+- `README.md` for setup, usage, and environment config
+- Unit test stubs under `tests/`
+- Logging using `logging` module
+- Secure token storage using Flask session (not persistent)
+
+---
+
+## 🔒 Security
+- Token is stored **only in session** and never logged.
+- No persistent storage unless enabled via Redis or DB later.
+- Session expiration recommended after 30 minutes.
+
+---
+
+## 💬 Notes
+- Paginate GitHub API results (repos and workflow runs)
+- Handle errors gracefully (bad token, no builds, etc.)
+- Style dashboard with a responsive table
+- Structure project with maintainability in mind
+
