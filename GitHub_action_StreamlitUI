@@ -1,0 +1,83 @@
+# Project: GitHub Build Inspector Dashboard
+
+## 📌 Goal
+Build a Streamlit-based dashboard that:
+1. Accepts an app name as input.
+2. Searches GitHub repositories under an org (`ownerne`) with naming pattern `app-<APPNAME>-*`.
+3. For each repo:
+   - Gets the default branch name.
+   - Fetches the latest successful GitHub Actions workflow run.
+   - Downloads the logs for that run and extracts Docker image tags (e.g., `release`, `snapshot`, `release-build`).
+4. Displays this info in a Streamlit table:
+   - Repo Name
+   - Branch
+   - Last Build Time
+   - Extracted Image Tags
+
+---
+
+## 🧑‍💻 Tech Stack
+- Python 3.10+
+- Streamlit for UI
+- GitHub REST API v3 (use token authentication)
+- (Optional for future) Redis for caching
+
+---
+
+## 📦 Requirements
+- Organize the app following SDLC best practices:
+  - Use a modular structure (separate API, service, and UI layers)
+  - Include unit test stubs for key components
+  - Use logging and handle errors gracefully
+  - Keep future Redis integration points commented and clean
+
+---
+
+## 🔐 Authentication
+Use a GitHub Personal Access Token (`GITHUB_TOKEN`) via environment variables for authenticated API access.
+
+---
+
+## 🧠 Logic Summary
+- API Layer:
+  - `github_api.py`:
+    - `search_repositories(app_name: str) -> List[dict]`
+    - `get_default_branch(repo_full_name: str) -> str`
+    - `get_latest_successful_run(repo_full_name: str, branch: str) -> dict`
+    - `get_workflow_logs(repo_full_name: str, run_id: int) -> str`
+
+- Service Layer:
+  - `parser.py`:
+    - `extract_image_tags(log_zip: bytes) -> List[str]`  
+    - Use regex patterns to match `release`, `snapshot`, `release build` with tags
+
+- UI Layer:
+  - `app.py`: Streamlit app using the above functions
+
+- (Future) Caching:
+  - Add Redis-based caching for:
+    - Search results per app name
+    - Logs per workflow run
+  - Use `redis-py` and `functools.lru_cache` or `@st.cache_data` for now
+  - Comment blocks should mark where Redis can be inserted later
+
+---
+
+## ✅ Deliverables
+- Well-documented Python modules:
+  - `github_api.py`, `parser.py`, `app.py`
+- `.env.example` for GITHUB_TOKEN
+- `requirements.txt`
+- `README.md` explaining setup and usage
+- Unit test stubs in `tests/` folder
+- Optional: Redis support placeholder (`cache.py`)
+
+---
+
+## 💬 Notes
+- Use type hints and docstrings
+- Use `logging` for debug/info/error logs
+- Handle GitHub API pagination
+- Assume only successful builds are of interest
+- Future optimization: use webhooks and Redis to prepopulate data
+
