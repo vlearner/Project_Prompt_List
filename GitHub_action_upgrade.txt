@@ -1,0 +1,107 @@
+Here’s a ready-to-use prompt you can drop into GitHub Copilot AI Agent so it builds the extra workflows tracking on top of your already-working develop branch code.
+
+It tells Copilot exactly what to do, what API endpoints to call, how to reuse your existing code, and where to keep it modular.
+
+⸻
+
+Prompt for GitHub Copilot AI Agent
+
+# Project Update: Extend GitHub Actions Tag Tracker
+
+## Context
+We already have working Python code in our Flask (or Streamlit) app that:
+- Accepts a repository name from a search bar
+- Uses the GitHub REST API v3 to:
+  - Fetch the latest successful workflow run for the `develop` branch
+  - Download workflow logs
+  - Parse logs with regex to extract a Docker image tag
+- Displays the develop branch image tag in the UI
+
+---
+
+## Task
+Extend the code so that for the **same repository** we can also fetch:
+
+1. **Last Snapshot Workflow Tag**
+   - Identify the workflow file for snapshot builds (e.g., `snapshot.yml`).
+   - Use:
+     ```
+     GET /repos/{owner}/{repo}/actions/workflows
+     GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs?status=success&per_page=1
+     ```
+   - Download the logs for the latest successful run and extract:
+     - Image tag (regex)
+     - Branch name (regex OR from API `head_branch`)
+
+2. **Last Release Workflow Tag**
+   - Same process as snapshot, but for release workflow (e.g., `release.yml`).
+
+3. **(Optional) Fourth Workflow File**
+   - If there’s another workflow file we want to track, use the same pattern.
+
+---
+
+## Requirements
+- Reuse the existing `get_image_tag_from_logs()` function for log parsing.
+- Create **modular functions**:
+  ```python
+  def get_last_develop_tag(repo_full_name: str, token: str) -> dict
+  def get_last_snapshot_tag(repo_full_name: str, token: str) -> dict
+  def get_last_release_tag(repo_full_name: str, token: str) -> dict
+
+Each returns:
+
+{
+    "workflow": "develop" | "snapshot" | "release",
+    "branch": "<branch name>",
+    "tag": "<image tag>",
+    "timestamp": "<ISO datetime>"
+}
+
+	•	Use GET /repos/{owner}/{repo}/actions/workflows to find workflow IDs by name (.yml file name match).
+	•	Paginate results if needed.
+	•	Handle API errors gracefully (e.g., workflow not found).
+	•	Keep GitHub token usage unchanged — still taken from existing app session or UI input.
+
+⸻
+
+Regex Patterns (already in develop code, reuse them)
+
+branch_pattern = re.compile(r"branch(?:\s+name)?\s*[:=]\s*([\w\-/]+)", re.IGNORECASE)
+tag_pattern = re.compile(r"(?:release|snapshot|release[-_ ]build).*?tag.*?:.*?([\w\.\-]+)", re.IGNORECASE)
+
+
+⸻
+
+Output
+	•	Update the UI so when the user searches for a repo name:
+	•	The develop branch tag
+	•	The snapshot workflow tag
+	•	The release workflow tag
+	•	are all displayed in a single results table with columns:
+	•	Workflow
+	•	Branch
+	•	Image Tag
+	•	Build Time
+
+⸻
+
+Coding Standards
+	•	Follow PEP8
+	•	Use type hints
+	•	Keep the functions small and testable
+	•	Document new functions with docstrings
+	•	Add unit test stubs for the new functions
+
+⸻
+
+Notes
+	•	No need to change the develop branch logic — only add snapshot/release functions and integrate into existing UI.
+	•	Logs parsing is identical for all workflows; only the API endpoint to get the latest run changes.
+	•	Keep it efficient: only download the log for the last successful run.
+
+---
+
+If you feed this into Copilot AI Agent, it will extend your current develop-branch code to handle **snapshot** and **release** workflows with minimal duplication.  
+
+Do you want me to also give you **a quick diagram of the API call sequence** so Copilot structures the code flow correctly? That would help it not miss pagination or error handling.
